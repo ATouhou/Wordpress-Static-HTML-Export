@@ -53,7 +53,8 @@ function deleteNonEmptyDir($dir)
 
 function tp_log($msg, $output = false)
 {	
-	file_put_contents(PLUGIN_DIR.'debug/log.txt', $msg.PHP_EOL, FILE_APPEND);
+    if( TP_DEBUG !== true ){ return; }
+	file_put_contents(PLUGIN_DIR.'log.txt', $msg.PHP_EOL, FILE_APPEND);
 	
 	if( $output )
 	{

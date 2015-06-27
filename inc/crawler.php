@@ -8,13 +8,13 @@ class Crawler
 	static private $urls_to_download = array();
 	static private $urls_downloaded = array();
 
-	static private $replace_dirs = [
+	static private $replace_dirs = array(
 		'/wp-content/themes' => NEW_THEME_FOLDER_NAME,
 		'/wp-includes' => NEW_INCLUDE_FOLDER_NAME,
 		'/wp-content' => NEW_CONTENT_FOLDER_NAME,
-	];
+	);
 
-	public static function exportWordpressAsHTML()
+	public static function runWordpressExport()
 	{
 		self::removeOutputFiles();
 		self::copyCurrentTheme();
@@ -72,7 +72,7 @@ class Crawler
 			self::enqueueUrls(self::getAllInternalUrls($html));
 			self::replaceUrls($html);
 			$static_dir = self::getStaticDirOfUrl($url);
-			
+
 			// dir exists?
 			if( !file_exists(OUTPUT_DIR.$static_dir) )
 			{

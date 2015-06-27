@@ -8,20 +8,14 @@ Author: Tim Pangritz
 Author URI: http://tim.pangritz.com
 */
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
-include(__DIR__.'/inc/main.inc.php');
 define('PLUGIN_DIR', __DIR__.'/');
-
-add_action('admin_menu', 'addStaticHTMLExportAdminMenu');
-
-function addStaticHTMLExportAdminMenu()
-{
-	add_menu_page('Static HTML Export', 'Static HTML Export', 'manage_options', PLUGIN_DIR.'main.php', array('Routes', 'AdminMainScreen'));	
-	add_submenu_page(PLUGIN_DIR.'main.php', 'Delete Output', 'Delete Output', 'manage_options', PLUGIN_DIR.'main.php?action=deleteOutput', ['Routes', 'AdminDeleteOutput']);
-	add_submenu_page(PLUGIN_DIR.'main.php', 'Tests', 'Tests', 'manage_options', PLUGIN_DIR.'main.php?action=tests', ['Routes', 'ShowTests']);
-}
+define('PLUGIN_URL', plugins_url('', __FILE__));
+define('TP_DEBUG', false);
+include(__DIR__.'/inc/main.inc.php');
 
 
-//add_action('after_switch_theme', ['Crawler', 'exportWordpressAsHTML']);
+add_action('plugins_loaded', ['StaticHTMLExportOptions', 'getInstance']);
+
 
 remove_action('wp_head', 'wlwmanifest_link');
 remove_action('wp_head', 'rsd_link');
