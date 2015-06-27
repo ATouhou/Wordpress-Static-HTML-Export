@@ -67,17 +67,19 @@ class Crawler
 				self::markUrlAsCrawled($url);
 				continue;
 			}
-			echo '.';
+			
 			$html = apply_filters('tp_site_html', self::getContentOfUrl($url));
 			self::enqueueUrls(self::getAllInternalUrls($html));
 			self::replaceUrls($html);
 			$static_dir = self::getStaticDirOfUrl($url);
+			
 			// dir exists?
 			if( !file_exists(OUTPUT_DIR.$static_dir) )
 			{
 				mkdir(OUTPUT_DIR.$static_dir, 0777, true);
 			}
 			$static_file = self::getStaticFileOfUrl($url);
+
 			// file exists?
 			if( !file_exists(OUTPUT_DIR.$static_dir.$static_file) )
 			{
@@ -85,6 +87,7 @@ class Crawler
 			}
 
 			self::markUrlAsCrawled($url);
+			tp_log('URL '.$url.' crawled. [static_dir='.$static_dir.', static_file='.$static_file.']');
 		}
 	}
 
@@ -152,6 +155,8 @@ class Crawler
 		);
 
 		$html = str_replace($urls, NEW_SITE_URL, $html);
+		// replace /?p={ID} sites
+		$html = preg_replace('/'.preg_quote(NEW_SITE_URL,'/').'\/\?p=(\d*)/i', NEW_SITE_URL.'/p$1/', $html);
 	}
 
 	public static function getContentOfUrl($url)
@@ -216,7 +221,17 @@ class Crawler
 		$url = str_replace([WP_SITE_URL, OLD_SITE_URL], '', $url);
 		$dir = parse_url($url, PHP_URL_PATH);
 
-		if( $dir == '/' || $dir == '' ){ return ''; }
+		if( $dir == '/' || $dir == '' )
+		{ 
+			// check for /?p={ID} site
+			$query = parse_url($url, PHP_URL_QUERY);
+			if( preg_match('/^p=\d*$/i', $query) )
+			{
+				return preg_replace('/p=(\d*)/i', 'p$1', $query).'/'; 
+			}
+
+			return ''; 
+		}
 
 		// replace dirs
 		/*foreach(self::$replace_dirs as $replace_dir=>$new_name)
@@ -278,16 +293,6 @@ class Crawler
 		add_filter('tp_site_html', ['Crawler', 'filter_change_generator']);
 	}
 	
-	// Replace all urls to files of the theme
-	/*public static function filter_replace_theme_urls($html)
-	{   //TODO: Das gleiche jeweils auch einmal "escaped" durchfuehren, wegen json-objects
-		// replace theme urls
-		$html = str_replace(get_template_directory_uri(), NEW_SITE_URL.'/'.NEW_THEME_FOLDER_NAME, $html);
-		// replace wp-include urls
-		$html = str_replace(includes_url(), NEW_SITE_URL.'/'.NEW_INCLUDE_FOLDER_NAME.'/', $html);
-		// replace wp-content urls
-		return str_replace(content_url(), NEW_SITE_URL.'/'.NEW_CONTENT_FOLDER_NAME, $html);
-	}*/
 
 	// remove pingback, EditURI and co.
 	public static function filter_remove_wordpress_header_links($html)
@@ -307,55 +312,5 @@ class Crawler
 		return preg_replace('/<meta[^>]*name="generator"[^>]*>/i', '<meta name="generator" content="'.NEW_GENERATOR.'">', $html);
 	}
 
-	// replace alle other urls
-	/*public static function filter_replace_all_other_urls($html)
-	{
-		// normal urls
-		$html = str_replace(OLD_SITE_URL, NEW_SITE_URL, $html);
-
-		// escaped urls like urls in json-code 
-		$old_site_escaped = str_replace('/', '\/', OLD_SITE_URL);
-		$new_site_escaped = str_replace('/', '\/', NEW_SITE_URL);
-		$html = str_replace($old_site_escaped, $new_site_escaped, $html);
-
-		return $html;
-	}
-
-	// download all used files
-	public static function filter_download_all_used_files($html)
-	{
-		preg_match_all('/'.preg_quote(OLD_SITE_URL, '/').'[^\"|^\'|\)|^<|^>|^#]+/i', $html, $treffer);
-
-		$treffer = array_unique($treffer[0]);
-
-		foreach($treffer as $url)
-		{
-			$output_dir = Crawler::getStaticDirOfUrl($url);
-			tp_log('URL '.$url.' has outputdir '.$output_dir);
-			$file = str_replace([OLD_SITE_URL, $output_dir], '', $url);
-
-			if( $file == '' || $file == '/' )
-			{
-				$file = 'index.html';
-			}
-
-			// create dir if not exist
-			if( !file_exists(OUTPUT_DIR.$output_dir) )
-			{
-				tp_log('create output dir '.OUTPUT_DIR.$output_dir.' of URL '.$url);
-				mkdir(OUTPUT_DIR.$output_dir, 0777, true);
-			}
-
-			// create file
-			if( !file_exists(OUTPUT_DIR.$output_dir.$file) )
-			{
-				tp_log('Lade URL '.$url.' nach '.OUTPUT_DIR.$output_dir.$file);
-				file_put_contents(OUTPUT_DIR.$output_dir.$file, '');
-				$content = apply_filters('tp_site_html_without_download', file_get_contents($url));
-				file_put_contents(OUTPUT_DIR.$output_dir.$file, $content);
-			}
-		}
-
-		return $html;
-	}*/
+	
 }
